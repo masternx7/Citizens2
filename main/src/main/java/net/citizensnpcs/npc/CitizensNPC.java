@@ -173,7 +173,17 @@ public class CitizensNPC extends AbstractNPC {
 
     @Override
     public boolean isSpawned() {
-        return getEntity() != null && (hasTrait(PacketNPC.class) || NMS.isValid(getEntity()));
+        Entity entity = getEntity();
+        if (entity == null)
+            return false;
+        if (hasTrait(PacketNPC.class))
+            return true;
+        // On Folia entity state may only be accessed from the thread that owns the entity's region. This method is
+        // also called from the global region thread while saving NPCs, so fall back to the entity controller's state
+        // instead of touching NMS there.
+        if (SpigotUtil.isFoliaServer() && !CitizensAPI.getScheduler().isOnOwnerThread(entity))
+            return false;
+        return NMS.isValid(entity);
     }
 
     @Override
